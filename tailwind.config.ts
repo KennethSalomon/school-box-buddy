@@ -12,7 +12,8 @@ export default {
     },
     extend: {
       fontFamily: {
-        display: ["Space Grotesk", "sans-serif"],
+        headline: ["Cinzel", "serif"],
+        identity: ["Syncopate", "sans-serif"],
         sans: ["Inter", "sans-serif"],
       },
       colors: {
@@ -28,18 +29,25 @@ export default {
         accent: { DEFAULT: "hsl(var(--accent))", foreground: "hsl(var(--accent-foreground))" },
         popover: { DEFAULT: "hsl(var(--popover))", foreground: "hsl(var(--popover-foreground))" },
         card: { DEFAULT: "hsl(var(--card))", foreground: "hsl(var(--card-foreground))" },
-        clover: {
-          black: "hsl(var(--clover-black))",
-          green: "hsl(var(--clover-green))",
-          "green-light": "hsl(var(--clover-green-light))",
-          gray: "hsl(var(--clover-gray))",
-          muted: "hsl(var(--clover-muted))",
+        yp: {
+          obsidian: "hsl(var(--yp-obsidian))",
+          navy: "hsl(var(--yp-navy))",
+          "navy-light": "hsl(var(--yp-navy-light))",
+          white: "hsl(var(--yp-white))",
+          red: "hsl(var(--yp-red))",
+          "red-glow": "hsl(var(--yp-red-glow))",
+          glass: "hsl(var(--yp-glass))",
         },
       },
       borderRadius: {
         lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
+        md: "calc(var(--radius) - 1px)",
+        sm: "calc(var(--radius) - 2px)",
+      },
+      spacing: {
+        '18': '4.5rem',
+        '88': '22rem',
+        '128': '32rem',
       },
       keyframes: {
         "accordion-down": { from: { height: "0" }, to: { height: "var(--radix-accordion-content-height)" } },
