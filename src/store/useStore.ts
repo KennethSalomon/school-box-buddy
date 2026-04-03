@@ -75,8 +75,28 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   adminLogin: (email, password) => {
-    if (email === 'yissekpanou96@gmail.com' && password === 'kenno') {
-      set({ isLoggedIn: true, isAdmin: true, currentUser: { firstName: 'Admin', lastName: 'SB', email, phone: '', referralCode: '', loyaltyPoints: 0, children: [] } });
+    // ⚠️ SECURITY: Use Supabase auth + user_roles table instead of hardcoded credentials
+    // This implementation is deprecated and should be replaced with:
+    // 1. Call Supabase signInWithPassword(email, password)
+    // 2. Check user_roles table for admin role
+    // 3. Only set isAdmin=true if user has admin role in database
+    
+    // Allow login if we have credentials, but mark as requiring Supabase validation
+    if (email && password && email.length > 0 && password.length >= 6) {
+      // NOTE: This is a placeholder - actual admin status should come from Supabase
+      set({ 
+        isLoggedIn: true, 
+        isAdmin: false, // Default to false - let Supabase determine actual admin status
+        currentUser: { 
+          firstName: 'Admin', 
+          lastName: 'User', 
+          email, 
+          phone: '', 
+          referralCode: '', 
+          loyaltyPoints: 0, 
+          children: [] 
+        } 
+      });
       return true;
     }
     return false;
