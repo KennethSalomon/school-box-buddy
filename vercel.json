@@ -1,0 +1,19 @@
+{
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "devCommand": "npm run dev",
+  "installCommand": "npm install",
+  "env": {
+    "VITE_SUPABASE_URL": "@vite_supabase_url",
+    "VITE_SUPABASE_ANON_KEY": "@vite_supabase_anon_key",
+    "VITE_FEDAPAY_API_KEY": "@vite_fedapay_api_key",
+    "VITE_FEDAPAY_CURRENCY": "@vite_fedapay_currency",
+    "VITE_FEDAPAY_WEBHOOK_SECRET": "@vite_fedapay_webhook_secret"
+  },
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
