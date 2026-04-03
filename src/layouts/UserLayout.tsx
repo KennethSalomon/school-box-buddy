@@ -19,18 +19,27 @@ const UserLayout = ({ children }: { children: ReactNode }) => {
       <main className="flex-1 pb-20 max-w-lg mx-auto w-full">
         {children}
       </main>
-      <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-border z-50">
-        <div className="flex items-center justify-around max-w-lg mx-auto h-16">
+      <nav className="fixed bottom-0 left-0 right-0 bg-card/80 backdrop-blur-xl border-t border-border/50 z-50">
+        <div className="flex items-center justify-around max-w-lg mx-auto h-[68px] px-2">
           {tabs.map(t => {
             const active = pathname === t.path || pathname.startsWith(t.path + '/');
             return (
               <button
                 key={t.path}
                 onClick={() => navigate(t.path)}
-                className={`flex flex-col items-center gap-0.5 px-3 py-1 transition-colors ${active ? 'text-primary' : 'text-muted-foreground'}`}
+                className={`flex flex-col items-center gap-1 px-3 py-1.5 rounded-xl transition-all duration-300 ${
+                  active 
+                    ? 'text-primary scale-105' 
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
               >
-                <t.icon className="w-5 h-5" />
-                <span className="text-[10px] font-semibold">{t.label}</span>
+                <div className={`relative ${active ? '' : ''}`}>
+                  <t.icon className="w-5 h-5" strokeWidth={active ? 2.5 : 1.8} />
+                  {active && (
+                    <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-primary" />
+                  )}
+                </div>
+                <span className={`text-[10px] ${active ? 'font-bold' : 'font-medium'}`}>{t.label}</span>
               </button>
             );
           })}
