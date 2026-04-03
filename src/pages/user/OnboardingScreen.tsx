@@ -1,24 +1,17 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useStore } from '@/store/useStore';
 import { Button } from '@/components/ui/button';
-import { Package, ShoppingBag, Truck } from 'lucide-react';
+import { Package, ShoppingBag, Truck, ArrowRight } from 'lucide-react';
 
 const slides = [
-  { icon: ShoppingBag, title: 'Trouve tes fournitures', desc: 'Recherche par école et classe pour trouver la liste officielle de fournitures.', color: 'text-primary' },
-  { icon: Package, title: 'Compose ta box', desc: 'Choisis la qualité, la quantité et ajoute tout dans ta box personnalisée.', color: 'text-accent' },
-  { icon: Truck, title: 'Reçois à domicile', desc: 'Livraison rapide en 24-48h directement chez toi. Simple et pratique !', color: 'text-primary' },
+  { icon: ShoppingBag, title: 'Trouve tes fournitures', desc: 'Recherche par école et classe pour trouver la liste officielle de fournitures.', color: 'text-primary', bg: 'bg-primary/10' },
+  { icon: Package, title: 'Compose ta box', desc: 'Choisis la qualité, la quantité et ajoute tout dans ta box personnalisée.', color: 'text-accent', bg: 'bg-accent/10' },
+  { icon: Truck, title: 'Reçois à domicile', desc: 'Livraison rapide en 24-48h directement chez toi. Simple et pratique !', color: 'text-primary', bg: 'bg-primary/10' },
 ];
 
 const OnboardingScreen = () => {
   const [step, setStep] = useState(0);
   const navigate = useNavigate();
-  const { setOnboardingSeen } = useStore();
-
-  const finish = () => {
-    setOnboardingSeen();
-    navigate('/app/register');
-  };
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -27,20 +20,20 @@ const OnboardingScreen = () => {
           {(() => {
             const Icon = slides[step].icon;
             return (
-              <div className="w-28 h-28 bg-muted rounded-3xl flex items-center justify-center mb-8 sb-animate-float">
-                <Icon className={`w-14 h-14 ${slides[step].color}`} />
+              <div className={`w-32 h-32 ${slides[step].bg} rounded-3xl flex items-center justify-center mb-8 sb-animate-float sb-luxury-shadow`}>
+                <Icon className={`w-16 h-16 ${slides[step].color}`} />
               </div>
             );
           })()}
-          <h2 className="text-2xl font-bold text-foreground mb-3">{slides[step].title}</h2>
-          <p className="text-muted-foreground leading-relaxed">{slides[step].desc}</p>
+          <h2 className="text-2xl font-extrabold text-foreground mb-3 tracking-tight">{slides[step].title}</h2>
+          <p className="text-muted-foreground leading-relaxed text-[15px]">{slides[step].desc}</p>
         </div>
 
         <div className="flex gap-2 mt-10">
           {slides.map((_, i) => (
             <div
               key={i}
-              className={`h-2 rounded-full transition-all duration-300 ${i === step ? 'w-8 bg-primary' : 'w-2 bg-muted'}`}
+              className={`h-2 rounded-full transition-all duration-500 ${i === step ? 'w-10 bg-primary sb-glow-primary' : 'w-2 bg-muted'}`}
             />
           ))}
         </div>
@@ -49,19 +42,19 @@ const OnboardingScreen = () => {
       <div className="px-6 pb-8 space-y-3">
         {step < slides.length - 1 ? (
           <>
-            <Button size="lg" className="w-full" onClick={() => setStep(step + 1)}>
-              Suivant
+            <Button size="lg" className="w-full h-12 sb-glow-primary font-semibold gap-2" onClick={() => setStep(step + 1)}>
+              Suivant <ArrowRight className="w-4 h-4" />
             </Button>
-            <Button variant="ghost" className="w-full text-muted-foreground" onClick={finish}>
+            <Button variant="ghost" className="w-full text-muted-foreground font-medium" onClick={() => navigate('/app/register')}>
               Passer
             </Button>
           </>
         ) : (
           <>
-            <Button size="lg" className="w-full" onClick={finish}>
+            <Button size="lg" className="w-full h-12 sb-glow-primary font-semibold" onClick={() => navigate('/app/register')}>
               S'inscrire
             </Button>
-            <Button variant="outline" className="w-full" onClick={() => { setOnboardingSeen(); navigate('/app/login'); }}>
+            <Button variant="outline" className="w-full h-12 font-semibold" onClick={() => navigate('/app/login')}>
               Se connecter
             </Button>
           </>
