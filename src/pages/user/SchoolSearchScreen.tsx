@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Search, MapPin, CheckCircle, ArrowLeft, GraduationCap } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 
 const SchoolSearchScreen = () => {
   const [query, setQuery] = useState('');
@@ -17,17 +18,34 @@ const SchoolSearchScreen = () => {
   const { setSchoolAndClass } = useStore();
 
   useEffect(() => {
-    supabase.from('schools').select('*').then(({ data }) => {
-      setSchools(data || []);
-      setLoading(false);
-    });
+    const fetchSchools = async () => {
+      try {
+        const { data, error } = await supabase.from('schools').select('*');
+        if (error) throw error;
+        setSchools(data || []);
+      } catch (error) {
+        console.error('Error fetching schools:', error);
+        toast.error('Erreur lors du chargement des écoles');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchSchools();
   }, []);
 
   useEffect(() => {
     if (selectedSchoolId) {
-      supabase.from('classes').select('*').eq('school_id', selectedSchoolId).then(({ data }) => {
-        setClasses(data || []);
-      });
+      const fetchClasses = async () => {
+        try {
+          const { data, error } = await supabase.from('classes').select('*').eq('school_id', selectedSchoolId);
+          if (error) throw error;
+          setClasses(data || []);
+        } catch (error) {
+          console.error('Error fetching classes:', error);
+          toast.error('Erreur lors du chargement des classes');
+        }
+      };
+      fetchClasses();
     }
   }, [selectedSchoolId]);
 

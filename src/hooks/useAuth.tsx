@@ -19,10 +19,12 @@ interface AuthContextType {
   profile: Profile | null;
   isAdmin: boolean;
   loading: boolean;
-  signUp: (email: string, password: string, meta: { first_name: string; last_name: string; phone: string }) => Promise<{ error: any }>;
-  signIn: (email: string, password: string) => Promise<{ error: any }>;
+  error: string | null;
+  signUp: (email: string, password: string, meta: { first_name: string; last_name: string; phone: string }) => Promise<{ error: Error | null }>;
+  signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
+  clearError: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -33,29 +35,43 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchProfile = async (userId: string) => {
     try {
-      const { data } = await supabase
+      const { data, error: fetchError } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
         .single();
+      
+      if (fetchError) {
+        throw new Error(`Erreur de profil: ${fetchError.message}`);
+      }
       if (data) setProfile(data as Profile);
-    } catch (e) {
-      console.error('Error fetching profile:', e);
+    } catch (error: Error | unknown) {
+      const errorMsg = error instanceof Error ? error.message : 'Impossible de charger le profil';
+      console.error('Error fetching profile:', errorMsg);
+      setError(errorMsg);
     }
   };
 
   const checkAdmin = async (userId: string) => {
     try {
-      const { data } = await supabase
+      const { data, error: fetchError } = await supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', userId)
         .eq('role', 'admin');
+      
+      if (fetchError) {
+        console.warn(`Erreur vérification admin: ${fetchError.message}`);
+        setIsAdmin(false);
+        return;
+      }
       setIsAdmin(!!data && data.length > 0);
-    } catch (e) {
+    } catch (error: Error | unknown) {
+      console.error('Error checking admin status:', error instanceof Error ? error.message : 'Unknown error');
       setIsAdmin(false);
     }
   };
@@ -94,34 +110,83 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const signUp = async (email: string, password: string, meta: { first_name: string; last_name: string; phone: string }) => {
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: meta,
-        emailRedirectTo: window.location.origin,
-      },
-    });
-    return { error };
+    try {
+      setError(null);
+      
+      if (!email || !password) {
+        throw new Error('Email et mot de passe sont obligatoires');
+      }
+      
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: meta,
+          emailRedirectTo: window.location.origin,
+        },
+      });
+      
+      if (error) {
+        setError(error.message);
+        console.error('Sign up error:', error.message);
+      }
+      
+      return { error };
+    } catch (e: Error | unknown) {
+      const errorMsg = e instanceof Error ? e.message : 'Erreur lors de l\'inscription';
+      setError(errorMsg);
+      console.error('Sign up exception:', errorMsg);
+      return { error: e instanceof Error ? e : new Error(String(e)) };
+    }
   };
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    return { error };
+    try {
+      setError(null);
+      
+      if (!email || !password) {
+        throw new Error('Email et mot de passe sont obligatoires');
+      }
+      
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      
+      if (error) {
+        setError(error.message);
+        console.error('Sign in error:', error.message);
+      }
+      
+      return { error };
+    } catch (e: Error | unknown) {
+      const errorMsg = e instanceof Error ? e.message : 'Erreur lors de la connexion';
+      setError(errorMsg);
+      console.error('Sign in exception:', errorMsg);
+      return { error: e instanceof Error ? e : new Error(String(e)) };
+    }
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
-    setProfile(null);
-    setIsAdmin(false);
+    try {
+      setError(null);
+      await supabase.auth.signOut();
+      setProfile(null);
+      setIsAdmin(false);
+    } catch (e: Error | unknown) {
+      const errorMsg = e instanceof Error ? e.message : 'Erreur lors de la déconnexion';
+      setError(errorMsg);
+      console.error('Sign out error:', errorMsg);
+    }
   };
 
   const refreshProfile = async () => {
-    if (user) await fetchProfile(user.id);
+    if (user) {
+      await fetchProfile(user.id);
+    }
   };
 
+  const clearError = () => setError(null);
+
   return (
-    <AuthContext.Provider value={{ user, session, profile, isAdmin, loading, signUp, signIn, signOut, refreshProfile }}>
+    <AuthContext.Provider value={{ user, session, profile, isAdmin, loading, error, signUp, signIn, signOut, refreshProfile, clearError }}>
       {children}
     </AuthContext.Provider>
   );

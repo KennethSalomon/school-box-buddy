@@ -22,7 +22,7 @@ const DeliveryScreen = () => {
     <div className="min-h-screen bg-background px-4 pt-6 pb-8">
       <div className="flex items-center gap-3 mb-6">
         <button onClick={() => navigate(-1)}><ArrowLeft className="w-5 h-5 text-foreground" /></button>
-        <h1 className="text-xl font-bold text-foreground">Où livrer votre box ?</h1>
+        <h1 className="text-xl font-extrabold text-foreground">Où livrer votre box ?</h1>
       </div>
 
       <Button variant="outline" className="w-full mb-5 justify-start gap-2" onClick={autoFill}>

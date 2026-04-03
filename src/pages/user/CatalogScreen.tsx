@@ -19,9 +19,16 @@ const CatalogScreen = () => {
 
   useEffect(() => {
     const fetchProducts = async () => {
-      const { data } = await supabase.from('products').select('*');
-      setDbProducts(data || []);
-      setLoading(false);
+      try {
+        const { data, error } = await supabase.from('products').select('*');
+        if (error) throw error;
+        setDbProducts(data || []);
+      } catch (error) {
+        console.error('Error fetching products:', error);
+        toast.error('Erreur lors du chargement des fournitures');
+      } finally {
+        setLoading(false);
+      }
     };
     fetchProducts();
   }, []);
@@ -76,7 +83,7 @@ const CatalogScreen = () => {
               <ArrowLeft className="w-4 h-4 text-secondary-foreground" />
             </button>
             <div>
-              <h1 className="text-lg font-bold text-secondary-foreground">Fournitures</h1>
+              <h1 className="text-lg font-extrabold text-secondary-foreground">Fournitures</h1>
               <p className="text-xs text-secondary-foreground/50">{selectedSchool || 'Toutes les écoles'} — {selectedClass || 'Toutes les classes'}</p>
             </div>
           </div>

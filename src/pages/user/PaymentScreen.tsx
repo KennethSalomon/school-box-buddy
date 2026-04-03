@@ -2,10 +2,12 @@ import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useStore } from '@/store/useStore';
+import { useFedaPay } from '@/hooks/useFedaPay';
 import { supabase } from '@/integrations/supabase/client';
-import { ArrowLeft, CheckCircle, CreditCard, Banknote, Smartphone } from 'lucide-react';
+import { ArrowLeft, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Spinner, LoadingOverlay } from '@/components/LoadingComponents';
 import { toast } from 'sonner';
 
 const paymentMethods = [
@@ -20,9 +22,11 @@ const paymentMethods = [
 const PaymentScreen = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { note = '', address = '' } = (location.state as any) || {};
+  const { note = '', address = '' } = (location.state as { note?: string; address?: string }) || {};
   const { cart, clearCart } = useStore();
   const { user, profile } = useAuth();
+  const { initiatePayment, loading: fedaPayLoading } = useFedaPay();
+  
   const [method, setMethod] = useState('');
   const [phone, setPhone] = useState('');
   const [success, setSuccess] = useState(false);
@@ -36,6 +40,7 @@ const PaymentScreen = () => {
   const total = subtotal + 500;
 
   const isMobile = method && method !== 'cash' && method !== 'fedapay';
+  const isLoading = processing || fedaPayLoading;
 
   const handlePay = async () => {
     if (!method) {
@@ -51,25 +56,29 @@ const PaymentScreen = () => {
     const orderNumber = `ORD-${Date.now()}`;
 
     try {
-      // Create order in database
-      const { data: order, error: orderError } = await supabase.from('orders').insert({
-        user_id: user.id,
-        order_number: orderNumber,
-        status: method === 'cash' ? 'pending' : 'pending',
-        payment_method: method,
-        delivery_address: address,
-        delivery_fee: 500,
-        subtotal,
-        total,
-        note,
-        client_name: `${profile?.first_name || ''} ${profile?.last_name || ''}`.trim(),
-        client_phone: profile?.phone || '',
-        client_email: user.email || '',
-      }).select().single();
+      // Créer la commande dans la base de données
+      const { data: order, error: orderError } = await supabase
+        .from('orders')
+        .insert({
+          user_id: user.id,
+          order_number: orderNumber,
+          status: method === 'cash' ? 'pending' : 'pending',
+          payment_method: method,
+          delivery_address: address,
+          delivery_fee: 500,
+          subtotal,
+          total,
+          note,
+          client_name: `${profile?.first_name || ''} ${profile?.last_name || ''}`.trim(),
+          client_phone: profile?.phone || '',
+          client_email: user.email || '',
+        })
+        .select()
+        .single();
 
-      if (orderError) throw orderError;
+      if (orderError) throw new Error(`Erreur création commande: ${orderError.message}`);
 
-      // Insert order items
+      // Insérer les articles de la commande
       const items = cart.map(c => ({
         order_id: order.id,
         product_id: c.product.id,
@@ -79,16 +88,58 @@ const PaymentScreen = () => {
         unit_price: c.quality === 'premium' ? c.product.premiumPrice : c.product.standardPrice,
       }));
 
-      const { error: itemsError } = await supabase.from('order_items').insert(items);
-      if (itemsError) throw itemsError;
+      const { error: itemsError } = await supabase
+        .from('order_items')
+        .insert(items);
+      if (itemsError) throw new Error(`Erreur articles: ${itemsError.message}`);
 
-      clearCart();
-      setOrderId(orderNumber);
-      setSuccess(true);
-      toast.success('Commande confirmée ! 🎉');
-    } catch (err: any) {
-      console.error('Order error:', err);
-      toast.error('Erreur lors de la commande. Réessaie.');
+      // Gérer le paiement selon la méthode
+      if (method === 'fedapay') {
+        // Initier le paiement FedaPay
+        const result = await initiatePayment({
+          amount: total,
+          currency: 'XOF',
+          description: `Commande ${orderNumber}`,
+          reference: orderNumber,
+          customer: {
+            name: `${profile?.first_name || ''} ${profile?.last_name || ''}`.trim(),
+            email: user.email || '',
+            phone: profile?.phone || '',
+          },
+          metadata: {
+            order_id: order.id,
+            user_id: user.id,
+          },
+          callback_url: `${window.location.origin}/app/payment-callback`,
+        });
+
+        if (result.success && result.data?.link) {
+          clearCart();
+          setOrderId(orderNumber);
+          // Rediriger vers FedaPay
+          window.location.href = result.data.link;
+          return;
+        } else {
+          throw new Error(result.error || 'Erreur lors de l\'initiation FedaPay');
+        }
+      } else if (method === 'cash') {
+        // Paiement à la livraison
+        clearCart();
+        setOrderId(orderNumber);
+        setSuccess(true);
+        toast.success('Commande confirmée ! 🎉');
+      } else {
+        // Autres méthodes de paiement (mobile money)
+        // Implémenter selon vos partenaires de paiement
+        clearCart();
+        setOrderId(orderNumber);
+        setSuccess(true);
+        toast.success('Commande confirmée ! Paiement en cours...');
+      }
+    } catch (err: Error | unknown) {
+      console.error('Erreur paiement:', err);
+      const errorMsg = err instanceof Error ? err.message : 'Erreur lors de la commande. Réessaie.';
+      toast.error(errorMsg);
     } finally {
       setProcessing(false);
     }
@@ -154,13 +205,18 @@ const PaymentScreen = () => {
         </div>
       )}
 
-      <Button size="lg" className="w-full h-12 sb-glow-primary font-bold text-base" onClick={handlePay} disabled={!method || processing}>
-        {processing ? (
-          <div className="w-5 h-5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+      <Button size="lg" className="w-full h-12 sb-glow-primary font-bold text-base" onClick={handlePay} disabled={!method || isLoading}>
+        {isLoading ? (
+          <div className="flex items-center gap-2">
+            <Spinner size="sm" />
+            <span>Traitement...</span>
+          </div>
         ) : (
           `Confirmer et payer — ${total.toLocaleString()} FCFA`
         )}
       </Button>
+      
+      <LoadingOverlay visible={isLoading} />
     </div>
   );
 };

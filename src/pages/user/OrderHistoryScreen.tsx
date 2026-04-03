@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { ArrowLeft, Package } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import UserLayout from '@/layouts/UserLayout';
+import { toast } from 'sonner';
 
 const statusColors: Record<string, string> = {
   pending: 'bg-warning/10 text-warning border border-warning/20',
@@ -31,13 +32,20 @@ const OrderHistoryScreen = () => {
   useEffect(() => {
     if (!user) return;
     const fetchOrders = async () => {
-      const { data } = await supabase
-        .from('orders')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
-      setOrders(data || []);
-      setLoading(false);
+      try {
+        const { data, error } = await supabase
+          .from('orders')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
+        if (error) throw error;
+        setOrders(data || []);
+      } catch (error) {
+        console.error('Error fetching orders:', error);
+        toast.error('Erreur lors de la récupération de vos commandes');
+      } finally {
+        setLoading(false);
+      }
     };
     fetchOrders();
 

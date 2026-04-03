@@ -21,7 +21,7 @@ const MyBoxScreen = () => {
       <div className="px-4 pt-6">
         <div className="flex items-center gap-3 mb-6">
           <button onClick={() => navigate(-1)}><ArrowLeft className="w-5 h-5 text-foreground" /></button>
-          <h1 className="text-xl font-bold text-foreground">Ma Box 📦</h1>
+          <h1 className="text-xl font-extrabold text-foreground">Ma Box 📦</h1>
         </div>
 
         {cart.length === 0 ? (

@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { ArrowLeft, MessageCircle, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 
 const steps = [
   { key: 'pending', label: 'Commande confirmée', icon: '✓' },
@@ -24,13 +25,20 @@ const OrderTrackingScreen = () => {
   useEffect(() => {
     if (!user || !orderId) return;
     const fetch = async () => {
-      const { data } = await supabase
-        .from('orders')
-        .select('*')
-        .eq('order_number', orderId)
-        .single();
-      setOrder(data);
-      setLoading(false);
+      try {
+        const { data, error } = await supabase
+          .from('orders')
+          .select('*')
+          .eq('order_number', orderId)
+          .single();
+        if (error) throw error;
+        setOrder(data);
+      } catch (error) {
+        console.error('Error fetching order tracking:', error);
+        toast.error('Erreur lors de la récupération de la commande');
+      } finally {
+        setLoading(false);
+      }
     };
     fetch();
 

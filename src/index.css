@@ -91,6 +91,10 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-extrabold tracking-tight;
+  }
+
   body {
     @apply bg-background text-foreground antialiased;
   }
@@ -104,17 +108,17 @@
 
 @layer components {
   .sb-card {
-    @apply bg-card rounded-[12px] border border-border/20 transition-all duration-300;
-    box-shadow: 0 4px 20px -4px rgba(0, 2, 73, 0.06);
+    @apply bg-card/80 backdrop-blur-md backdrop-saturate-150 rounded-[12px] border border-border/30 transition-all duration-300;
+    box-shadow: 0 8px 32px 0 rgba(0, 2, 73, 0.05);
   }
 
   .sb-card-hover {
-    @apply sb-card hover:shadow-lg hover:-translate-y-0.5 hover:border-accent/20;
+    @apply sb-card hover:shadow-lg hover:-translate-y-1 hover:border-accent/40;
   }
 
   .sb-card-glass {
-    @apply rounded-[12px] border border-white/10 backdrop-blur-xl;
-    background: var(--gradient-glass);
+    @apply bg-background/60 backdrop-blur-xl backdrop-saturate-200 rounded-[12px] border border-white/20;
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
   }
 
   .sb-input-focus {

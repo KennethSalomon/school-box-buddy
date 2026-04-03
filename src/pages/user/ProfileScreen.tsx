@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { User, ChevronRight, LogOut, Bell, Plus, X, Trophy, Settings, Shield } from 'lucide-react';
@@ -17,39 +17,67 @@ const ProfileScreen = () => {
   const [loadingChildren, setLoadingChildren] = useState(true);
 
   // Load children from DB
-  useState(() => {
-    if (user) {
-      supabase.from('children').select('*').eq('user_id', user.id).then(({ data }) => {
+  useEffect(() => {
+    const fetchChildren = async () => {
+      if (!user) return;
+      try {
+        const { data, error } = await supabase.from('children').select('*').eq('user_id', user.id);
+        if (error) throw error;
         setChildren(data || []);
+      } catch (error) {
+        console.error('Error fetching children:', error);
+        toast.error('Erreur lors du chargement de vos enfants');
+      } finally {
         setLoadingChildren(false);
-      });
-    }
-  });
+      }
+    };
+    fetchChildren();
+  }, [user]);
 
   const handleLogout = async () => {
-    await signOut();
-    navigate('/app/login');
-    toast.success('Déconnexion réussie');
+    try {
+      await signOut();
+      navigate('/app/login');
+      toast.success('Déconnexion réussie');
+    } catch (error) {
+      console.error('Logout error:', error);
+      toast.error('Erreur lors de la déconnexion');
+    }
   };
 
   const handleAddChild = async () => {
     if (!childForm.name || !user) return;
-    const { data, error } = await supabase.from('children').insert({
-      user_id: user.id,
-      name: childForm.name,
-    }).select().single();
-    if (!error && data) {
-      setChildren(prev => [...prev, data]);
-      setChildForm({ name: '', school: '', class: '' });
-      setShowAddChild(false);
-      toast.success('Enfant ajouté !');
+    try {
+      const { data, error } = await supabase.from('children').insert({
+        user_id: user.id,
+        name: childForm.name,
+      }).select().single();
+      
+      if (error) throw error;
+      
+      if (data) {
+        setChildren(prev => [...prev, data]);
+        setChildForm({ name: '', school: '', class: '' });
+        setShowAddChild(false);
+        toast.success('Enfant ajouté !');
+      }
+    } catch (error) {
+      console.error('Add child error:', error);
+      toast.error('Erreur lors de l\'ajout de l\'enfant');
     }
   };
 
   const handleRemoveChild = async (childId: string) => {
-    await supabase.from('children').delete().eq('id', childId);
-    setChildren(prev => prev.filter(c => c.id !== childId));
-    toast.success('Enfant supprimé');
+    try {
+      const { error } = await supabase.from('children').delete().eq('id', childId);
+      if (error) throw error;
+      
+      setChildren(prev => prev.filter(c => c.id !== childId));
+      toast.success('Enfant supprimé');
+    } catch (error) {
+      console.error('Remove child error:', error);
+      toast.error('Erreur lors de la suppression de l\'enfant');
+    }
   };
 
   return (
@@ -111,7 +139,11 @@ const ProfileScreen = () => {
             </button>
           </div>
 
-          {children.map(child => (
+          {loadingChildren ? (
+            <div className="flex justify-center py-4">
+              <div className="w-6 h-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+            </div>
+          ) : children.map(child => (
             <div key={child.id} className="sb-card p-3.5 flex items-center justify-between mb-2">
               <div>
                 <p className="font-semibold text-foreground text-sm">{child.name}</p>
